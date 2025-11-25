@@ -25,7 +25,7 @@
       background:#fff;
     }
 
-    /* 결과 표표 */
+    /* 결과 표 */
     .result{
       margin-top:12px;
       padding:10px 16px;
@@ -136,12 +136,28 @@
   
 </head>
 <body>
-  <div class="wrap">
-    <h1>
-      조리종사원 산안전보건교육 인건비 계산기
-      <span id="note" class="muted"></span>
-    </h1>
 
+<main class="container" style="max-width:880px; margin:0 auto; padding:24px 16px;">
+  <div class="wrap">
+    <h1> 산안전보건교육 인건비 계산기 (조리종사원) </h1>
+<hr/>
+
+<!-- ================================ 구분선 ================================ -->
+
+    <section class="section">
+      <h2>사용 방법 안내</h2>
+      <p class="muted">
+        1. 직종을 선택한다. (해당 수당만 활성화됨) <br/>
+        2. 최초 임용일자를 입력한다. (근속연수 자동 산정됨) <br/>
+        3. 방학중 집체교육은 기본급+정액급식비만 반영함. 최저시급 보전. <br/>
+        4. 온라인 교육은 보통 학기중 초과근무로 함.<br/>
+        5. 쨔쟌~ 집체교육 +온라인 교육 인건비 합산 금액 산정됨. 끝.<br/>
+      </p>
+    </section>
+
+<!-- ================================ 구분선 ================================ -->
+
+    
     <!-- 통상임금 계산 블록 -->
     <div class="card">
       <div class="row">
@@ -340,6 +356,7 @@
   <script src="app.js"></script>
 </body>
 </html>
+
 
 
 
