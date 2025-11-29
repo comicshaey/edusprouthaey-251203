@@ -17,16 +17,26 @@
       box-sizing:border-box;
     }
 
-    /* 상단 범위 텍스트 숨기기 (예: 2025년 11월 ~ 2026년 2월) */
+    /* 상단 범위 텍스트 숨기기 */
     .range-text{
       display:none !important;
+    }
+
+    /* 학년도 제목 sticky 고정 */
+    #title{
+      position: sticky;
+      top: 0;
+      background:#fff;
+      z-index:50;
+      padding:10px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
     }
 
     body{
       margin:0;
       background:#fff;
       color:#111;
-      font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, sans-serif;
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans KR",Arial,sans-serif;
     }
     .wrap{
       max-width:1200px;
@@ -35,23 +45,18 @@
     }
     h1{
       font-size:1.4rem;
-      margin:8px 0 4px;
+      margin:0 0 4px;
     }
     .muted{
       color:#555;
       font-size:.95rem;
       margin:0 0 12px;
     }
-    .range-text{
-      font-weight:600;
-      margin-bottom:10px;
-    }
 
-    /* 설정 영역(입력칸) 묶음 */
+    /* 설정 영역 */
     .controls-wrap{
       margin-bottom:16px;
     }
-
     .controls{
       display:flex;
       flex-wrap:wrap;
@@ -59,18 +64,11 @@
       align-items:center;
       font-size:.9rem;
     }
-    .controls label{
-      display:inline-flex;
-      align-items:center;
-      gap:4px;
-    }
     .controls input{
       padding:4px 6px;
-      font-size:.9rem;
     }
     .controls button{
       padding:5px 10px;
-      font-size:.9rem;
       border-radius:6px;
       border:1px solid var(--line);
       background:#fafafa;
@@ -80,7 +78,7 @@
       background:#f0f0f0;
     }
 
-    /* 설정 접기/펼치기 버튼 */
+    /* 접기 버튼 */
     .controls-toggle{
       text-align:right;
       margin-top:4px;
@@ -94,10 +92,8 @@
       text-decoration:underline;
       padding:0;
     }
-    .toggle-btn:hover{
-      color:#111;
-    }
 
+    /* 달력 */
     .grid{
       border:1px solid var(--line);
       border-radius:12px;
@@ -115,9 +111,7 @@
       border-right:1px solid var(--line);
       font-size:.9rem;
     }
-    .head:last-child{
-      border-right:none;
-    }
+    .head:last-child{border-right:none;}
 
     .cell{
       min-height:120px;
@@ -128,22 +122,17 @@
       gap:4px;
       border-bottom:1px solid var(--line);
     }
-    .cell:last-child{
-      border-right:none;
-    }
+    .cell:last-child{border-right:none;}
+
     .date{
       font-size:.9rem;
       font-weight:900;
-      margin-bottom:2px;
     }
     .txt{
       flex:1;
-      min-height:0;
       white-space:pre-wrap;
-      line-height:1.35;
       overflow:auto;
       overflow-wrap:anywhere;
-      padding-right:2px;
     }
 
     /* 일/토 색상 */
@@ -152,14 +141,9 @@
     .row:not(:first-child) > .cell:nth-child(1) .date{ color:var(--sun) }
     .row:not(:first-child) > .cell:nth-child(7) .date{ color:var(--sat) }
 
-    /* 날짜(주간 달력 링크) 스타일 */
-    .date-link{
-      color:inherit;
-      text-decoration:none;
-    }
-    .date-link:hover{
-      text-decoration:underline;
-    }
+    /* 주간 달력 링크 */
+    .date-link{ color:inherit; text-decoration:none; }
+    .date-link:hover{ text-decoration:underline; }
 
     .month-wrap{
       margin-bottom:24px;
@@ -171,29 +155,19 @@
       padding:8px 10px;
       border-bottom:1px solid var(--line);
       background:#fdfdfd;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      font-size:.95rem;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-    .month-title{
       font-weight:700;
     }
+
     .btn{
       display:inline-block;
       padding:8px 12px;
       border-radius:10px;
       border:1px solid #222;
-      text-decoration:none;
-      color:#111;
       font-weight:600;
       font-size:.9rem;
+      text-decoration:none;
+      color:#111;
       background:#fff;
-    }
-    .btn + .btn{
-      margin-left:8px;
     }
     footer{
       margin-top:24px;
@@ -201,278 +175,213 @@
       color:#444;
       text-align:center;
     }
-    .nav-links{
-      margin-top:4px;
-    }
   </style>
 </head>
 <body>
   <div class="wrap">
+
     <h1 id="title">학년도별 월간 업무 일정 달력</h1>
 
+    <p class="muted">
+      · 학년도 기준(3월~다음해 2월) · notes JSON에서 일정 불러옴
+    </p>
 
-    <!-- 설정 영역(입력칸 + 접기 버튼) -->
+    <!-- 설정 영역 -->
     <div class="controls-wrap">
-      <div class="controls" id="controls">
-        <label>
-          시작 연월:
-          <input type="month" id="startYmInput" />
-        </label>
-        <label>
-          개월 수:
-          <input type="number" id="countInput" min="1" max="36" />
-        </label>
+      <div class="controls" id="controls" style="display:none">
+        <label>시작 연월: <input type="month" id="startYmInput"></label>
+        <label>개월 수: <input type="number" id="countInput" min="1" max="36"></label>
         <button id="applyBtn">적용</button>
         <span class="range-text" id="rangeText"></span>
       </div>
       <div class="controls-toggle">
-        <button type="button" id="toggleControlsBtn" class="toggle-btn">설정 접기</button>
+        <button type="button" id="toggleControlsBtn" class="toggle-btn">설정 열기</button>
       </div>
     </div>
 
     <div id="root"></div>
 
-    <div class="nav-links">
+    <div style="margin-top:12px;">
       <a class="btn" href="/calendar/">학년도별 모음으로</a>
-      <a class="btn" href="/">메인으로 돌아가기</a>
+      <a class="btn" href="/">메인으로</a>
     </div>
 
     <footer>
-      제작자: 씩씩하고 귀여운 고주무관 · Contact: edusproutcomics@naver.com · 개인적인 토이 프로젝트입니다.
+      제작자: 씩씩하고 귀여운 고주무관 · 개인 토이 프로젝트
     </footer>
   </div>
 
-  <script>
-    // ------ 학년도 기준 기본 시작 연월 계산 (3월~다음해 2월) ------
-    function getDefaultStartYmByAcademicYear(){
-      const today = new Date();
-      const y = today.getFullYear();
-      const m = today.getMonth() + 1;
-      const yearStart = (m >= 3 ? y : y - 1); // 3~12월: 그 해 3월 / 1~2월: 전년도 3월
-      return `${yearStart}-03`;
+<script>
+  /* 학년도 기본값 계산 (3월 시작) */
+  function getDefaultStartYm(){
+    const t = new Date();
+    const y = t.getFullYear();
+    const m = t.getMonth()+1;
+    return (m>=3 ? y : y-1) + "-03";
+  }
+  function getDefaultMonths(){ return 12; }
+
+  const q = new URLSearchParams(location.search);
+  const DEFAULT_START = getDefaultStartYm();
+  const START_YM = q.get("start") || DEFAULT_START;
+  const COUNT = Math.max(1, Math.min(36, parseInt(q.get("months")||getDefaultMonths(),10)));
+
+  let NOTES = {};
+
+  const pad = n => (n<10?"0":"")+n;
+  const ymd = (y,m,d) => `${y}-${pad(m)}-${pad(d)}`;
+  const ymToDate = ym => { let [y,m]=ym.split("-").map(Number); return new Date(y,m-1,1); };
+  const addMonths = (d,n) => new Date(d.getFullYear(), d.getMonth()+n, 1);
+
+  // inputs
+  const startYmInput = document.getElementById("startYmInput");
+  const countInput = document.getElementById("countInput");
+  const applyBtn = document.getElementById("applyBtn");
+  const controlsEl = document.getElementById("controls");
+  const toggleBtn = document.getElementById("toggleControlsBtn");
+  const rangeText = document.getElementById("rangeText");
+  const root = document.getElementById("root");
+
+  startYmInput.value = START_YM;
+  countInput.value = COUNT;
+
+  /* 날짜 범위 텍스트 (지금은 CSS로 숨김) */
+  function setRangeText(){
+    const start = ymToDate(START_YM);
+    const end = addMonths(start, COUNT-1);
+    rangeText.textContent =
+      `${start.getFullYear()}년 ${start.getMonth()+1}월 ~ ${end.getFullYear()}년 ${end.getMonth()+1}월`;
+  }
+
+  /* notes JSON 불러오기 */
+  function halfKeyByDate(d){
+    const y = d.getFullYear();
+    const m = d.getMonth()+1;
+    let base;
+    if(m>=3 && m<=8) base = `${y}-03-08`;
+    else base = `${m>=9?y:y-1}-09-02`;
+    return base;
+  }
+  async function loadNotes(keys){
+    NOTES = {};
+    await Promise.all(keys.map(async k=>{
+      try{
+        const r = await fetch(`notes/notes-${k}.json`);
+        if(!r.ok) return;
+        Object.assign(NOTES, await r.json());
+      }catch(e){}
+    }));
+  }
+  function collectKeys(startYm,count){
+    const s = ymToDate(startYm);
+    const set = new Set();
+    for(let i=0;i<count;i++){
+      const d = addMonths(s,i);
+      set.add(halfKeyByDate(d));
     }
-    function getDefaultMonths(){ return 12; }
+    return [...set];
+  }
 
-    // ---------------- 기본 파라미터 처리 ----------------
-    const q = new URLSearchParams(location.search);
-    const DEFAULT_START_YM = getDefaultStartYmByAcademicYear();
-    const DEFAULT_MONTHS = getDefaultMonths();
+  /* 월 렌더 */
+  function renderMonth(y,m){
+    const first = new Date(y,m-1,1);
+    const last = new Date(y,m,0).getDate();
+    const startWd = first.getDay();
 
-    const START_YM = q.get('start') || DEFAULT_START_YM;
-    const COUNT    = Math.max(
-      1,
-      Math.min(
-        36,
-        parseInt(q.get('months') || String(DEFAULT_MONTHS), 10)
-      )
-    );
-    const CUSTOM_TITLE = q.get('title') || '';
+    const wrap = document.createElement("div");
+    wrap.className="month-wrap";
 
-    let NOTES = {}; // JSON에서 불러와서 채움
+    wrap.innerHTML = `
+      <div class="month-header">${y}년 ${m}월</div>
+      <div class="grid"></div>
+    `;
 
-    const root = document.getElementById('root');
-    const rangeText = document.getElementById('rangeText');
-    const h1 = document.getElementById('title');
-    if (CUSTOM_TITLE) h1.textContent = CUSTOM_TITLE;
+    const grid = wrap.querySelector(".grid");
 
-    const startYmInput = document.getElementById("startYmInput");
-    const countInput = document.getElementById("countInput");
-    const applyBtn = document.getElementById("applyBtn");
-    const controlsEl = document.getElementById("controls");
-    const toggleBtn = document.getElementById("toggleControlsBtn");
-
-    // URL 파라미터 기준으로 입력칸 초기값 세팅
-    startYmInput.value = START_YM;
-    countInput.value = COUNT;
-
-    const pad = n => (n<10?'0':'')+n;
-    const ymd = (y,m,d) => `${y}-${pad(m)}-${pad(d)}`;
-    const ymToDate = ym => {
-      const [y,m] = ym.split('-').map(Number);
-      return new Date(y, m-1, 1);
-    };
-    const addMonths = (d,n) => new Date(d.getFullYear(), d.getMonth()+n, 1);
-    // notes에 HTML 태그를 그대로 쓰기 위해 이스케이프는 하지 않고 그대로 반환
-    const escapeHtml = s => s || '';
-    const wdK = w => ['일','월','화','수','목','금','토'][w];
-
-    // ---------------- 상단 범위 텍스트 (지금은 CSS로 숨김) ----------------
-    function setRangeText(){
-      const start = ymToDate(START_YM);
-      const end = addMonths(start, COUNT-1);
-      rangeText.textContent =
-        `${start.getFullYear()}년 ${start.getMonth()+1}월 ~ `+
-        `${end.getFullYear()}년 ${end.getMonth()+1}월`;
-    }
-
-    // ---------------- 월 렌더링 ----------------
-    function renderMonth(y,m){
-      const first = new Date(y, m-1, 1);
-      const startWd = first.getDay(); // 0=일
-      const lastDay = new Date(y, m, 0).getDate();
-
-      const monthWrap = document.createElement('div');
-      monthWrap.className = 'month-wrap';
-
-      const monthHeader = document.createElement('div');
-      monthHeader.className = 'month-header';
-
-      const titleHtml = `${y}년 ${m}월`;
-      const monthTitle = document.createElement('div');
-      monthTitle.className = 'month-title';
-      monthTitle.textContent = titleHtml;
-
-      monthHeader.appendChild(monthTitle);
-      monthWrap.appendChild(monthHeader);
-
-      const grid = document.createElement('div');
-      grid.className = 'grid';
-
-      let html = '';
-
-      // 요일 헤더
-      html += '<div class="row">';
-      ['일','월','화','수','목','금','토'].forEach(d=>{
-        html += `<div class="head">${d}</div>`;
-      });
-      html += '</div>';
-
-      // 날짜 칸
-      let day = 1;
-      while(day <= lastDay){
-        html += '<div class="row">';
-        for(let w=0; w<7; w++){
-          if(day===1 && w<startWd){
-            html += '<div class="cell"></div>';
-          }else if(day>lastDay){
-            html += '<div class="cell"></div>';
-          }else{
-            let dateHtml = day;
-            let text = '';
-
-            const inMonth = (day>=1 && day<=lastDay);
-            if(inMonth){
-              const key = ymd(y,m,day);
-              text = NOTES[key] || '';
-
-              // 이 날짜가 포함된 주의 "일요일" 기준으로 주간 달력 링크 생성
-              const weekStart = new Date(y, m-1, day);
-              weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // 일요일로 이동
-              const weekStartStr = ymd(
-                weekStart.getFullYear(),
-                weekStart.getMonth()+1,
-                weekStart.getDate()
-              );
-              const weeklyTitle = encodeURIComponent(`${y}년 ${m}월 ${day}일이 포함된 주간 일정`);
-              const weeklyUrl =
-                `/calendar/calendar-weekly-academic.html?start=${weekStartStr}&weeks=1&title=${weeklyTitle}`;
-              dateHtml = `<a href="${weeklyUrl}" class="date-link">${day}</a>`;
-            }
-
-            html += `<div class="cell">`;
-            html += `<div class="date">${dateHtml}</div>`;
-            // notes 내용은 HTML로 그대로 렌더링
-            html += `<div class="txt">${text}</div>`;
-            html += `</div>`;
-            day++;
-          }
-        }
-        html += '</div>';
-      }
-      grid.innerHTML = html;
-      monthWrap.appendChild(grid);
-      root.appendChild(monthWrap);
-    }
-
-    function renderRange(){
-      const start = ymToDate(START_YM);
-      for(let i=0;i<COUNT;i++){
-        const d = addMonths(start, i);
-        renderMonth(d.getFullYear(), d.getMonth()+1);
-      }
-    }
-
-    // ---------------- 6개월 단위 JSON 관리 ----------------
-    function getHalfKeyByDate(date){
-      const y = date.getFullYear();
-      const m = date.getMonth() + 1;
-      let yearStart;
-      let half;
-
-      if (m >= 3 && m <= 8) {       // 3~8월
-        yearStart = y;
-        half = '03-08';
-      } else {                      // 9~12월, 1~2월
-        if (m >= 9) {
-          yearStart = y;
-        } else {
-          yearStart = y - 1;        // 1~2월은 전년도 학년도 2블럭
-        }
-        half = '09-02';
-      }
-      return `${yearStart}-${half}`;   // 예: "2025-09-02"
-    }
-
-    function collectHalfKeysForMonthly(startYm, count){
-      const start = ymToDate(startYm);
-      const set = new Set();
-      for (let i=0; i<count; i++){
-        const d = addMonths(start, i);
-        set.add(getHalfKeyByDate(d));
-      }
-      return Array.from(set);  // ["2025-09-02", "2026-03-08", ...]
-    }
-
-    async function loadNotes(files){
-      NOTES = {};
-      await Promise.all(files.map(async (url)=>{
-        try{
-          const res = await fetch(url);
-          if(!res.ok) return;
-          const data = await res.json();
-          Object.assign(NOTES, data);
-        }catch(e){
-          // 파일 없으면 조용히 무시
-        }
-      }));
-    }
-
-    // ---------------- 적용 버튼 동작 ----------------
-    applyBtn.addEventListener("click", () => {
-      const ym = startYmInput.value;
-      const cnt = parseInt(countInput.value, 10) || 1;
-      if (!ym) return;
-
-      const params = new URLSearchParams();
-      params.set("start", ym);
-      params.set("months", cnt.toString());
-      if (CUSTOM_TITLE) params.set("title", CUSTOM_TITLE);
-
-      location.search = params.toString();
+    let html = "";
+    html += '<div class="row">';
+    ["일","월","화","수","목","금","토"].forEach(d=>{
+      html += `<div class="head">${d}</div>`;
     });
+    html+='</div>';
 
-    // ---------------- 설정 접기/펼치기 ----------------
-    let controlsVisible = true;
-    toggleBtn.addEventListener("click", () => {
-      controlsVisible = !controlsVisible;
-      if (controlsVisible){
-        controlsEl.style.display = "flex";
-        toggleBtn.textContent = "설정 접기";
-      }else{
-        controlsEl.style.display = "none";
-        toggleBtn.textContent = "설정 열기";
+    let day=1;
+    while(day<=last){
+      html+='<div class="row">';
+      for(let w=0;w<7;w++){
+        if(day===1 && w<startWd){ html+='<div class="cell"></div>'; }
+        else if(day>last){ html+='<div class="cell"></div>'; }
+        else{
+          const key = ymd(y,m,day);
+          const text = NOTES[key] || "";
+
+          // 주간 달력 링크용 일요일 계산
+          const wd = new Date(y,m-1,day);
+          wd.setDate(wd.getDate()-wd.getDay());
+          const weekStart = ymd(
+            wd.getFullYear(), wd.getMonth()+1, wd.getDate()
+          );
+          const weekUrl = `/calendar/calendar-weekly-academic.html?start=${weekStart}&weeks=1`;
+
+          html+=`
+            <div class="cell">
+              <div class="date"><a class="date-link" href="${weekUrl}">${day}</a></div>
+              <div class="txt">${text}</div>
+            </div>
+          `;
+          day++;
+        }
       }
-    });
+      html+='</div>';
+    }
 
-    // ---------------- 초기 실행 ----------------
-    (async function init(){
-      const halfKeys = collectHalfKeysForMonthly(START_YM, COUNT);
-      const files = halfKeys.map(key => `notes/notes-${key}.json`);
-      await loadNotes(files);
-      setRangeText();
-      renderRange();
-    })();
-  </script>
-  <script src="/static/global-loader.js?v=1"></script>
+    grid.innerHTML = html;
+    root.appendChild(wrap);
+  }
+
+  function renderAll(){
+    const s = ymToDate(START_YM);
+    for(let i=0;i<COUNT;i++){
+      const d = addMonths(s,i);
+      renderMonth(d.getFullYear(), d.getMonth()+1);
+    }
+  }
+
+  /* 적용 버튼 */
+  applyBtn.addEventListener("click",()=>{
+    const ym = startYmInput.value;
+    const cnt = parseInt(countInput.value,10)||1;
+    if(!ym) return;
+
+    const p = new URLSearchParams();
+    p.set("start",ym);
+    p.set("months",cnt);
+
+    location.search = p.toString();
+  });
+
+  /* 설정 접기/열기 */
+  let controlsVisible = false; // 초기: 접힘
+  toggleBtn.addEventListener("click",()=>{
+    controlsVisible = !controlsVisible;
+    if(controlsVisible){
+      controlsEl.style.display = "flex";
+      toggleBtn.textContent = "설정 접기";
+    }else{
+      controlsEl.style.display = "none";
+      toggleBtn.textContent = "설정 열기";
+    }
+  });
+
+  /* 초기 로딩 */
+  (async function init(){
+    const keys = collectKeys(START_YM,COUNT);
+    await loadNotes(keys);
+    setRangeText();
+    renderAll();
+  })();
+</script>
+
+<script src="/static/global-loader.js?v=1"></script>
 </body>
 </html>
