@@ -3,82 +3,73 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>여비 계산·검증 통합 도구 (실무자/감사관)</title>
+  <title>관내여비 자동 검증기 (Pyodide 버전)</title>
 
-  <!-- 공통 스타일 -->
+  <!-- 공통 스타일: 네 사이트 기준 -->
   <link rel="stylesheet" href="/static/style.css" />
 
+  <!-- Pyodide 로더 -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+
   <style>
-    /* 탭 전환용 버튼 스타일 약간 보정 */
-    .mode-tabs {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 12px;
+    /* 이 페이지용 보조 스타일만 약간 추가 */
+    .page-wrap {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 24px 16px 32px;
     }
-    .mode-tab {
-      padding: 8px 16px;
-      border-radius: 999px;
-      border: 1px solid #d4d4d8;
-      background: #f9fafb;
-      cursor: pointer;
-      font-size: 1rem;
+    .file-area {
+      border: 1px solid #e5e5e5;
+      border-radius: 12px;
+      padding: 16px 18px;
+      background: #fff;
+      margin: 18px 0;
     }
-    .mode-tab.active {
-      background: #111;
-      color: #fff;
-      border-color: #111;
+    .file-area p {
+      margin: 8px 0;
     }
-
-    .field-row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
+    .log-box {
+      border: 1px solid #e5e5e5;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: #fafafa;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+      margin-top: 8px;
+      max-height: 180px;
+      overflow: auto;
     }
-    .field-row label {
-      min-width: 150px;
-      font-size: 1rem;
-    }
-    .field-row input,
-    .field-row select {
-      min-width: 0;
-      flex: 1 1 180px;
-      max-width: 260px;
-    }
-
     .result-box {
       border: 1px solid #e5e5e5;
       border-radius: 10px;
-      padding: 12px 14px;
+      padding: 10px 12px;
       background: #fafafa;
-      margin-top: 10px;
-      font-size: 1rem;
+      margin: 12px 0;
     }
-    .result-line {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      margin: 2px 0;
+    .result-box h3 {
+      margin-top: 0;
     }
-    .result-label {
-      font-weight: 600;
+    .result-box textarea {
+      width: 100%;
+      min-height: 180px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      border: 1px solid #d4d4d8;
+      padding: 8px 10px;
+      background: #f9fafb;
+      resize: vertical;
+      white-space: pre;
     }
-    .result-value {
-      text-align: right;
-      min-width: 120px;
-    }
-
-    .tag {
+    .badge {
       display: inline-flex;
       align-items: center;
       padding: 2px 8px;
+      font-size: 0.8rem;
       border-radius: 999px;
-      font-size: 0.85rem;
-      background: #f3f4f6;
-      color: #374151;
-      border: 1px solid #e5e7eb;
+      background: #eef2ff;
+      color: #1f2937;
+      border: 1px solid #c7d2fe;
     }
   </style>
 </head>
@@ -88,313 +79,290 @@
     <a href="/" class="btn-home">← 메인으로 돌아가기</a>
   </div>
 
-  <!-- 헤더 -->
   <header class="site-header">
     <div class="shell">
-      <h1>여비 계산·검증 통합 도구</h1>
+      <h1>관내여비 자동 검증기 (브라우저 Pyodide)</h1>
       <p class="sub">
-        · 실무자용 여비 계산기와 감사관용 여비 검증기를 한 화면에서 전환해 사용할 수 있습니다.<br />
-        · 4시간 기준 관내여비(반일 10,000원 / 종일 20,000원) 및 국내 근무지 외 여비규정(일비·식비·숙박비 상한)을 전제로 합니다.
+        · 나이스 관내여비 지급내역 엑셀(.xlsx) 여러 개를 업로드하면, 브라우저 안에서 파이썬(pandas)로 월별 요약·이상행을 자동 검증합니다.<br />
+        · 서버가 필요 없어서 GitHub Pages 같은 정적 페이지에서도 동작합니다.
       </p>
-
-      <div class="mode-tabs">
-        <button type="button" class="mode-tab active" data-mode="worker">
-          실무자용 여비 계산기
-        </button>
-        <button type="button" class="mode-tab" data-mode="auditor">
-          감사관용 여비 검증기
-        </button>
-      </div>
     </div>
   </header>
 
-  <main>
-    <!-- =========================
-         A. 실무자용 여비 계산기
-         ========================= -->
-    <section class="section" id="mode-worker">
-      <h2 class="local-h2">A. 실무자용 여비 계산기</h2>
+  <main class="page-wrap">
+    <section class="section">
+      <h2 class="local-h2">1. 사용 전제 (엑셀 구조)</h2>
+      <ul>
+        <li>엑셀 헤더(1행)에 다음 열이 있어야 합니다: <strong>시작일, 출장자, 부지급, 지급금액</strong></li>
+        <li><strong>부지급 = "아니오"</strong> 인 행만 실제 지급으로 간주합니다.</li>
+        <li>관내 단가는 <strong>10,000 / 20,000원</strong>만 정상 단위금액으로 보고, 그 외 금액은 이상행으로 플래그합니다.</li>
+        <li>여러 연도·월 파일(.xlsx)을 한 번에 선택하면, 월별(연월) 기준으로 모두 합산해서 검증합니다.</li>
+      </ul>
       <p class="local-small muted">
-        · 출장 전에 “관내/관외, 반일/종일, 숙박 여부”를 기준으로 예상 여비를 산출하는 용도입니다.<br />
-        · 실제 지출결의 시에는 반드시 해당 연도 여비 규정 및 교육청·학교 내부 기준을 함께 확인해야 합니다.
+        ※ 실제 감사·지급 시에는 여비 규정, 교육청 지침, 출장명령서·여비명세서 등과 함께 최종 판단해야 합니다.
+      </p>
+    </section>
+
+    <section class="section file-area">
+      <h2 class="local-h2">2. 엑셀 업로드 및 검증 실행</h2>
+
+      <p>
+        <span class="badge">관내여비 관점 자동 검증</span>
+      </p>
+      <p class="local-small muted">
+        · 3년치 관내여비 지급내역 엑셀(.xlsx)을 모두 선택해서 업로드하면, 월별 요약과 이상행 목록을 한 번에 생성합니다.<br />
+        · 파일 선택 후 <strong>“검증 실행”</strong> 버튼을 눌러주세요.
       </p>
 
-      <!-- 1. 계산 유형 -->
-      <div class="card">
-        <h3 class="local-h3">1. 계산 구분</h3>
-        <div class="field-row">
-          <label>출장 유형</label>
-          <div>
-            <label><input type="radio" name="calcType" value="inner" checked> 근무지 내 국내출장 (관내)</label>
-            &nbsp;&nbsp;
-            <label><input type="radio" name="calcType" value="outer"> 근무지 외 국내출장 (관외)</label>
-          </div>
-        </div>
-        <p class="local-small muted">
-          · 관내: 왕복 2km 이상, 4시간 기준 반일(10,000원)·종일(20,000원) 정액을 전제로 합니다.<br />
-          · 관외: 일비·식비·숙박비·운임을 모두 합산해서 예상 여비를 계산합니다.
-        </p>
+      <div class="row" style="margin-top:10px;">
+        <input type="file" id="fileInput" accept=".xlsx" multiple />
+        <button type="button" class="btn primary" id="runAuditBtn">검증 실행</button>
       </div>
 
-      <!-- 2. 근무지 내 계산기 -->
-      <div class="card" id="section-inner">
-        <h3 class="local-h3">2. 근무지 내 국내출장 계산 (관내)</h3>
-
-        <div class="field-row">
-          <label for="innerDistance">왕복 거리 (km)</label>
-          <input type="number" id="innerDistance" min="0" step="0.1" class="numeric" placeholder="예: 5" />
-        </div>
-
-        <div class="field-row">
-          <label for="innerHours">출장 소요시간 (시간)</label>
-          <input type="number" id="innerHours" min="0" step="0.1" class="numeric" placeholder="예: 3.5" />
-        </div>
-
-        <div class="field-row">
-          <label>공용차량/임차차량 사용</label>
-          <div>
-            <label><input type="radio" name="innerCar" value="no" checked> 사용 안 함</label>
-            &nbsp;&nbsp;
-            <label><input type="radio" name="innerCar" value="yes"> 사용함 (공용차·업무용택시·렌트 등)</label>
-          </div>
-        </div>
-
-        <div class="field-row">
-          <label for="innerActualShort">근거리 실비 (왕복 2km 이내, 선택)</label>
-          <input type="number" id="innerActualShort" min="0" step="100" class="numeric"
-                 placeholder="왕복 2km 이내일 때 실제 운임+식비 합계" />
-        </div>
-
-        <p class="local-small muted">
-          · 왕복 2km 초과: 4시간 미만 10,000원 / 4시간 이상 20,000원 (공용차량 사용 시 10,000원 감액).<br />
-          · 왕복 2km 이내: 정액 대신 실비 지급(4시간 미만 최대 10,000원, 4시간 이상 최대 20,000원) 전제로 합니다.
-        </p>
-
-        <div class="row" style="margin-top:10px;">
-          <button type="button" class="btn primary" id="btnInner">관내 여비 계산</button>
-        </div>
-
-        <div class="result-box" id="innerResult" style="display:none;"></div>
-      </div>
-
-      <!-- 3. 근무지 외 계산기 -->
-      <div class="card" id="section-outer" style="display:none;">
-        <h3 class="local-h3">3. 근무지 외 국내출장 계산 (관외)</h3>
-
-        <div class="grid two">
-          <div class="field">
-            <label for="outerDays">출장일수 (일)</label><br />
-            <input type="number" id="outerDays" min="1" step="1" class="numeric" placeholder="예: 2" />
-          </div>
-          <div class="field">
-            <label for="outerNights">숙박일수 (박)</label><br />
-            <input type="number" id="outerNights" min="0" step="1" class="numeric" placeholder="예: 1" />
-          </div>
-        </div>
-
-        <div class="grid two" style="margin-top:8px;">
-          <div class="field">
-            <label for="outerRegion">숙박 지역 구분</label><br />
-            <select id="outerRegion">
-              <option value="seoul">서울특별시</option>
-              <option value="metro">광역시</option>
-              <option value="other" selected>기타·세종·제주</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="outerLodgingSpent">실제(예상) 숙박비 합계 (원)</label><br />
-            <input type="number" id="outerLodgingSpent" min="0" step="100" class="numeric"
-                   placeholder="영수증 또는 예상 숙박비 합계" />
-          </div>
-        </div>
-
-        <div class="field-row">
-          <label>숙박 상한 30% 가산</label>
-          <div>
-            <label><input type="radio" name="outerLodgingExtra" value="no" checked> 미적용</label>
-            &nbsp;&nbsp;
-            <label><input type="radio" name="outerLodgingExtra" value="yes"> 적용 (성수기·불가피 사유)</label>
-          </div>
-        </div>
-
-        <div class="field-row">
-          <label for="outerCarDays">공용/임차 차량 사용일수</label>
-          <input type="number" id="outerCarDays" min="0" step="1" class="numeric"
-                 placeholder="일비 1/2 적용 일수" />
-        </div>
-
-        <div class="field-row">
-          <label>항공마일리지 사용</label>
-          <div>
-            <label><input type="radio" name="outerMileage" value="no" checked> 사용 안 함</label>
-            &nbsp;&nbsp;
-            <label><input type="radio" name="outerMileage" value="yes"> 사용함 (보너스권/좌석승급)</label>
-          </div>
-        </div>
-
-        <div class="grid two">
-          <div class="field">
-            <label for="outerMealsProvided">무료 제공 식사 횟수</label><br />
-            <input type="number" id="outerMealsProvided" min="0" step="1" class="numeric" placeholder="예: 2" />
-          </div>
-          <div class="field">
-            <label for="outerLongStayRate">장기체재 일비 감액율</label><br />
-            <select id="outerLongStayRate">
-              <option value="1.0" selected>미적용 (100%)</option>
-              <option value="0.9">90%</option>
-              <option value="0.8">80%</option>
-              <option value="0.7">70%</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="field-row">
-          <label for="outerFare">운임 실비 (원)</label>
-          <input type="number" id="outerFare" min="0" step="100" class="numeric"
-                 placeholder="철도·항공·버스 등 실제 또는 예상 운임 합계" />
-        </div>
-
-        <p class="local-small muted">
-          · 일비·식비·숙박비는 여비규정 정액·상한 기준으로, 운임은 입력한 실비를 그대로 합산합니다.<br />
-          · 항공마일리지 사용 시 일비 50% 추가(절약된 운임의 1/2 한도)는 실제 집행 시 별도 검토가 필요합니다.
-        </p>
-
-        <div class="row" style="margin-top:10px;">
-          <button type="button" class="btn primary" id="btnOuter">관외 여비 계산</button>
-        </div>
-
-        <div class="result-box" id="outerResult" style="display:none;"></div>
+      <div id="pyLog" class="log-box">
+        Pyodide 로딩 대기 중입니다...
       </div>
     </section>
 
-    <!-- =========================
-         B. 감사관용 여비 검증기
-         ========================= -->
-    <section class="section" id="mode-auditor" style="display:none;">
-      <h2 class="local-h2">B. 감사관용 여비 검증기</h2>
-      <p class="local-small muted">
-        · 지출결의서·나이스 원자료 기준으로 “관내 반일/종일 건수”와 “금액”이 맞는지 검증하는 용도입니다.<br />
-        · 2025년 5월 문막초 관내여비 지출결의서(총 450,000원)를 참고한 구조입니다.
-      </p>
+    <section class="section">
+      <h2 class="local-h2">3. 결과 (CSV 형식)</h2>
 
-      <!-- 1. 월간 집계 검증 -->
-      <div class="card">
-        <h3 class="local-h3">1. 월간 관내여비 집계 검증</h3>
-
-        <div class="grid two">
-          <div class="field">
-            <label for="monthLabel">검증 대상 연월(자유 입력)</label><br />
-            <input type="text" id="monthLabel" placeholder="예: 2025년 5월 관내여비" />
-          </div>
-          <div class="field">
-            <label for="decidedTotal">지출결의 총액 (원)</label><br />
-            <input type="number" id="decidedTotal" class="numeric" placeholder="예: 450000" />
-          </div>
-        </div>
-
-        <hr />
-
-        <div class="grid two">
-          <div class="field">
-            <label for="halfCount">반일(4시간 미만) 출장 건수</label><br />
-            <input type="number" id="halfCount" class="numeric" min="0" step="1" placeholder="예: 15" />
-          </div>
-          <div class="field">
-            <label for="fullCount">종일(4시간 이상) 출장 건수</label><br />
-            <input type="number" id="fullCount" class="numeric" min="0" step="1" placeholder="예: 8" />
-          </div>
-        </div>
-
-        <div class="grid two" style="margin-top:8px;">
-          <div class="field">
-            <label for="unitHalf">반일 단가 (원)</label><br />
-            <input type="number" id="unitHalf" class="numeric" value="10000" />
-          </div>
-          <div class="field">
-            <label for="unitFull">종일 단가 (원)</label><br />
-            <input type="number" id="unitFull" class="numeric" value="20000" />
-          </div>
-        </div>
-
-        <div class="row" style="margin-top:12px;">
-          <button type="button" class="btn primary" id="btnVerifyMonthly">
-            월간 집계 검증
-          </button>
-          <button type="button" class="btn ghost" id="btnResetMonthly">
-            값 초기화
-          </button>
-        </div>
-
-        <div id="monthlyResult" class="result-box" style="margin-top:12px; display:none;"></div>
-      </div>
-
-      <!-- 2. 개별 지급내역 행 단위 검증 -->
-      <div class="card">
-        <h3 class="local-h3">2. 개별 지급내역 행 단위 검증 (수동 입력)</h3>
-
+      <div class="result-box">
+        <h3 class="local-h3">3-1. 월별 관내여비 요약 (inner_monthly_summary.csv)</h3>
         <p class="local-small muted">
-          · 나이스 원자료에서 이름 / 관내-반일·종일 여부 / 금회지급액을 보고, 아래 표에 그대로 입력합니다.<br />
-          · 각 행에 대해 “규정상 기대액”과 실제 입력액을 비교하여 불일치 여부를 표시합니다.
+          · 연월별 관내여비 총액/건수/이상행 건수/최소·최대금액 및 “전건 허용 단위금액 여부”가 정리됩니다.
         </p>
-
-        <div class="grid two" style="margin-top:8px;">
-          <div class="field">
-            <label for="detailUnitHalf">반일 단가 (원)</label><br />
-            <input type="number" id="detailUnitHalf" class="numeric" value="10000" />
-          </div>
-          <div class="field">
-            <label for="detailUnitFull">종일 단가 (원)</label><br />
-            <input type="number" id="detailUnitFull" class="numeric" value="20000" />
-          </div>
-        </div>
-
-        <div class="table-wrap" style="margin-top:10px;">
-          <table class="sheetlike simple-table" id="detailTable">
-            <thead>
-              <tr>
-                <th style="width:40px;">No</th>
-                <th style="min-width:130px;">성명</th>
-                <th style="min-width:160px;">구분</th>
-                <th style="min-width:120px;">지급액(원)</th>
-                <th style="min-width:130px;">규정상 기대액(원)</th>
-                <th style="min-width:150px;">결과</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- JS로 행 추가 -->
-            </tbody>
-          </table>
-        </div>
-
-        <div class="row gap" style="margin-top:8px;">
-          <button type="button" class="btn" id="btnAddRow">행 추가</button>
-          <button type="button" class="btn ghost" id="btnClearRows">전체 행 삭제</button>
-          <button type="button" class="btn primary" id="btnVerifyDetails">행 단위 검증</button>
-        </div>
-
-        <div id="detailSummary" class="result-box" style="margin-top:12px; display:none;"></div>
+        <textarea id="summaryOutput" readonly placeholder="여기에 월별 요약 CSV 결과가 표시됩니다."></textarea>
       </div>
 
-      <div class="card">
-        <h3 class="local-h3">3. 감사 시 유의사항</h3>
-        <ul class="local-small">
-          <li>이 검증기는 관내 왕복 2km 이상 정액 기준만 반영합니다.</li>
-          <li>왕복 2km 이내 근거리 실비, 운전원 특례, 1일 2회 이상 출장 상한 등은 별도의 감사 기준에 따라 판단해야 합니다.</li>
-          <li>여비명세서, 출장명령서, 나이스 원자료, 지출결의서 사이의 인원·횟수·금액 일치 여부도 함께 확인하는 것이 좋습니다.</li>
-        </ul>
+      <div class="result-box">
+        <h3 class="local-h3">3-2. 관내여비 이상행 상세 (inner_detail_flags.csv)</h3>
+        <p class="local-small muted">
+          · 10,000 / 20,000원이 아닌 지급액이 표시되며, 연월/지급일자/성명/지급액/파일명·시트명이 함께 출력됩니다.
+        </p>
+        <textarea id="detailOutput" readonly placeholder="여기에 이상행 상세 CSV 결과가 표시됩니다."></textarea>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
     <div class="shell">
-      <p>여비 계산·검증 통합 도구 (travel-expenses-verifier)</p>
+      <p>관내여비 자동 검증기 (Pyodide / pandas 기반)</p>
       <p class="muted">
-        · 실무자용 여비 계산기 + 감사관용 여비 검증기 시범 버전입니다. 실제 집행·감사 시에는 최신 여비 규정과 기관 지침을 반드시 병행해 확인해야 합니다.
+        · 서버 없이 브라우저에서만 동작하는 시범 버전입니다. 대용량 파일이 많을 경우 브라우저 성능에 영향을 줄 수 있습니다.
       </p>
     </div>
   </footer>
 
-  <script src="script.js"></script>
+  <script>
+    // ============================
+    // 1. Pyodide 로딩
+    // ============================
+
+    let pyodideReadyPromise = null;
+
+    async function initPyodideAndPackages() {
+      const logEl = document.getElementById("pyLog");
+      logEl.textContent = "Pyodide 로딩 중... (최초 1회만 다소 시간이 걸릴 수 있습니다)";
+
+      // Pyodide 로드
+      const pyodide = await loadPyodide();
+
+      logEl.textContent = "pandas 패키지 로딩 중...";
+
+      // pyodide에는 pandas가 기본 포함되어 있음
+      await pyodide.loadPackage("pandas");
+
+      // 여기서 Python 쪽 검증 함수 정의
+      const pythonCode = `
+import io
+import pandas as pd
+from datetime import datetime
+
+# ===== 환경 설정 =====
+DATE_COL = "시작일"      # 날짜
+NAME_COL = "출장자"      # 성명
+AMOUNT_COL = "지급금액"   # 금액
+FLAG_COL = "부지급"      # 부지급 여부 (아니오만 사용)
+ALLOWED_AMOUNTS = {10000, 20000}
+
+def normalize_date_series(s):
+    \"\"\"날짜 열을 datetime으로 통일\"\"\"
+    return pd.to_datetime(s, errors="coerce")
+
+def audit_inner_travel(file_list):
+    \"\"\"
+    file_list: 브라우저에서 업로드한 엑셀 파일 경로 리스트 (Pyodide FS 상 경로)
+    반환값: (summary_csv_str, detail_csv_str)
+    \"\"\"
+    frames = []
+    for path in file_list:
+        try:
+            # sheet_name=None 이면 모든 시트를 dict로 읽어옴
+            xls = pd.read_excel(path, sheet_name=None)
+            for sheet_name, df in xls.items():
+                if df is None or df.empty:
+                    continue
+                tmp = df.copy()
+                tmp["__파일명"] = path
+                tmp["__시트명"] = sheet_name
+                frames.append(tmp)
+        except Exception as e:
+            # 읽기 실패해도 전체는 계속 진행
+            print(f"[경고] 파일 읽기 실패: {path} -> {e}")
+
+    if not frames:
+        raise ValueError("엑셀에서 읽어온 시트가 없습니다. 파일 구조를 확인하세요.")
+
+    df_all = pd.concat(frames, ignore_index=True)
+
+    # 필수 열 체크
+    required_cols = [DATE_COL, NAME_COL, AMOUNT_COL, FLAG_COL]
+    missing = [c for c in required_cols if c not in df_all.columns]
+    if missing:
+        raise ValueError(f"다음 열을 찾을 수 없습니다. 엑셀 헤더 또는 설정을 확인하세요: {missing}")
+
+    # 부지급 != "아니오" 는 제외 (실제 지급만 사용)
+    df = df_all[df_all[FLAG_COL].astype(str).str.strip() == "아니오"].copy()
+    if df.empty:
+        raise ValueError("부지급='아니오' 인 행이 없습니다. 엑셀 구조 또는 필터 조건을 확인하세요.")
+
+    # 날짜·연월 정리
+    df["__날짜"] = normalize_date_series(df[DATE_COL])
+    df["연월"] = df["__날짜"].dt.to_period("M").astype(str)
+
+    # 금액·성명 정리
+    df["__지급액"] = pd.to_numeric(df[AMOUNT_COL], errors="coerce").fillna(0).astype(int)
+    df["__성명"] = df[NAME_COL].astype(str).fillna("")
+
+    # 허용 단위금액 여부
+    df["허용단위금액여부"] = df["__지급액"].isin(ALLOWED_AMOUNTS)
+    # 만원 단위 여부
+    df["만원단위여부"] = (df["__지급액"] % 10000 == 0)
+    # 이상행: 허용 단위금액이 아님
+    df["이상여부"] = ~df["허용단위금액여부"]
+
+    # ===== 1) 월별 요약 =====
+    grouped = df.groupby("연월")
+    summary = grouped.agg(
+        관내여비_총액=("__지급액", "sum"),
+        지급건수=("__지급액", "size"),
+        허용단위금액_건수=("허용단위금액여부", "sum"),
+        이상행_건수=("이상여부", "sum"),
+        최소금액=("__지급액", "min"),
+        최대금액=("__지급액", "max"),
+        파일수=("__파일명", "nunique"),
+    ).reset_index()
+
+    summary["전건_허용단위금액"] = summary["지급건수"] == summary["허용단위금액_건수"]
+
+    # ===== 2) 이상행 상세 =====
+    detail = df[df["이상여부"]].copy()
+    keep_cols = [
+        "연월",
+        "__날짜",
+        "__성명",
+        "__지급액",
+        "__파일명",
+        "__시트명",
+        "허용단위금액여부",
+        "만원단위여부",
+    ]
+    detail = detail[keep_cols].rename(
+        columns={
+            "__날짜": "지급일자",
+            "__성명": "성명",
+            "__지급액": "지급액",
+        }
+    )
+
+    # CSV 문자열로 변환 (UTF-8, BOM 없이)
+    summary_csv = summary.to_csv(index=False)
+    detail_csv = detail.to_csv(index=False)
+
+    return summary_csv, detail_csv
+      `;
+
+      pyodide.runPython(pythonCode);
+      logEl.textContent = "Pyodide + pandas 로딩 완료. 엑셀 파일을 선택한 후 '검증 실행' 버튼을 눌러 주세요.";
+      return pyodide;
+    }
+
+    // 최초 1회 로딩
+    pyodideReadyPromise = initPyodideAndPackages();
+
+    // ============================
+    // 2. 파일을 Pyodide FS로 넘겨서 검증 실행
+    // ============================
+
+    async function runAudit() {
+      const logEl = document.getElementById("pyLog");
+      const summaryOutput = document.getElementById("summaryOutput");
+      const detailOutput = document.getElementById("detailOutput");
+
+      summaryOutput.value = "";
+      detailOutput.value = "";
+
+      const fileInput = document.getElementById("fileInput");
+      const files = fileInput.files;
+      if (!files || files.length === 0) {
+        alert("관내여비 지급내역 엑셀(.xlsx) 파일을 하나 이상 선택해 주세요.");
+        return;
+      }
+
+      logEl.textContent = `Pyodide 준비 상태 확인 중...`;
+      const pyodide = await pyodideReadyPromise;
+
+      // 업로드용 폴더 생성 (이미 있으면 무시)
+      try {
+        pyodide.FS.mkdir("uploads");
+      } catch (e) {
+        // 이미 있으면 오류 무시
+      }
+
+      logEl.textContent = `엑셀 파일 ${files.length}개를 브라우저로 읽는 중...`;
+
+      // JS에서 ArrayBuffer -> Pyodide FS 로 쓰기
+      const filePaths = [];
+      for (const file of files) {
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        const safeName = "uploads/" + file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        pyodide.FS.writeFile(safeName, uint8Array);
+        filePaths.push(safeName);
+      }
+
+      logEl.textContent =
+        `엑셀 ${files.length}개를 FS에 저장 완료. 파이썬으로 검증을 실행합니다...`;
+
+      try {
+        // Python 쪽 audit_inner_travel(file_list) 호출
+        const fileListLiteral = JSON.stringify(filePaths);
+        const code = `
+file_list = ${fileListLiteral}
+summary_csv, detail_csv = audit_inner_travel(file_list)
+`;
+        await pyodide.runPythonAsync(code);
+
+        const summary_csv = pyodide.globals.get("summary_csv");
+        const detail_csv = pyodide.globals.get("detail_csv");
+
+        summaryOutput.value = summary_csv.toString();
+        detailOutput.value = detail_csv.toString();
+
+        logEl.textContent =
+          "검증 완료. 아래 월별 요약과 이상행 CSV를 확인해 주세요. 필요시 복사해서 엑셀에 붙여넣으면 됩니다.";
+      } catch (err) {
+        console.error(err);
+        logEl.textContent =
+          "검증 중 오류가 발생했습니다. 엑셀 헤더(시작일/출장자/부지급/지급금액)와 내용 구조를 다시 확인해 주세요.\n\n" +
+          String(err);
+      }
+    }
+
+    document.getElementById("runAuditBtn").addEventListener("click", () => {
+      runAudit();
+    });
+  </script>
 </body>
 </html>
